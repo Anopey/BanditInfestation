@@ -153,7 +153,6 @@ namespace CustomSpawns.RewardSystem
                     return RewardType.Money;
                 case "Renown":
                     return RewardType.Renown;
-                    break;
                 case "Influence":
                     return RewardType.Influence;
                 case "Item":

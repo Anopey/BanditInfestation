@@ -3,12 +3,10 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
+using System.Text.RegularExpressions;
 using System.Xml;
 using TaleWorlds.CampaignSystem;
-using TaleWorlds.CampaignSystem.SandBox.CampaignBehaviors;
 using TaleWorlds.Library;
-using TaleWorlds.Localization;
 using TaleWorlds.Core;
 using TaleWorlds.Engine;
 using TaleWorlds.ObjectSystem;
@@ -26,7 +24,7 @@ namespace CustomSpawns.Data
         {
             get
             {
-                return _instance ?? new SpawnDataManager();
+                return _instance;
             }
             private set
             {
@@ -40,6 +38,15 @@ namespace CustomSpawns.Data
             if (caller == null)
                 return;
             _instance = null;
+        }
+
+        public static void Init()
+        {
+            if (_instance != null)
+            {
+                throw new Exception("SpawnDataManager has already been initialised!");
+            }
+            _instance = new SpawnDataManager();
         }
 
         private List<SpawnData> data = new List<SpawnData>();
@@ -82,6 +89,32 @@ namespace CustomSpawns.Data
                 if (File.Exists(path))
                     ConstructListFromXML(path);
             }
+
+            DataUtils.EnsureWarnIDQUalities(data);
+        }
+
+        private Clan parseFaction(XmlNode node, string attributeTag)
+        {
+            if (node.Attributes[attributeTag] == null)
+                throw new ArgumentException("Expected valid xml node");
+
+            string value = node.Attributes[attributeTag].Value;
+            Regex pattern = new Regex(@"Faction.(?<clanId>\w+)");
+            Match match = pattern.Match(value);
+            
+            if(!match.Success)
+                throw new ArgumentException("Invalid value for " + attributeTag + ". Expected value is " + attributeTag + "=Faction.{factionId}");
+
+            string clanId = match.Groups["clanId"].Value;
+
+            try
+            {
+                return Clan.All.First(clan => clan.StringId.Equals(clanId));
+            }
+            catch (System.InvalidOperationException e)
+            {
+                throw new Exception("Clan " + clanId + " is not defined. You have to add this clan via xml or use an existing clan.");
+            }
         }
 
         private void ConstructListFromXML(string filePath)
@@ -103,9 +136,9 @@ namespace CustomSpawns.Data
                         dat.PartyTemplatePrisoner = (PartyTemplateObject)MBObjectManager.Instance.ReadObjectReferenceFromXml("party_template_prisoners", typeof(PartyTemplateObject), node); 
 
                     if (node.Attributes["spawn_clan"] == null)
-                        dat.SpawnClan = (Clan)MBObjectManager.Instance.ReadObjectReferenceFromXml("bandit_clan", typeof(Clan), node);
+                        dat.SpawnClan = parseFaction(node, "bandit_clan");
                     else
-                        dat.SpawnClan = (Clan)MBObjectManager.Instance.ReadObjectReferenceFromXml("spawn_clan", typeof(Clan), node);
+                        dat.SpawnClan = parseFaction(node, "spawn_clan");
 
                     //have bannerlord read attributes
 
@@ -120,7 +153,7 @@ namespace CustomSpawns.Data
                         }
                         else
                         {
-                            dat.OverridenSpawnClan.Add((Clan)MBObjectManager.Instance.ReadObjectReferenceFromXml(s1, typeof(Clan), node));
+                            dat.OverridenSpawnClan.Add(parseFaction(node, s1));
                         }
                         i++;
                     }
@@ -258,7 +291,7 @@ namespace CustomSpawns.Data
                         if (!float.TryParse(node["ExtraLinearSpeed"].InnerText, out extraSpeed)) { 
                             throw new Exception("ExtraLinearSpeed must be a float value! ");
                         }
-                        Main.customSpeedModel.RegisterPartyExtraSpeed(dat.PartyTemplate.StringId, extraSpeed);
+                        Main.PartySpeedContext.RegisterPartyExtraBonusSpeed(dat.PartyTemplate.StringId, extraSpeed);
                     }
 
                     //handle base speed override
@@ -269,11 +302,11 @@ namespace CustomSpawns.Data
                         {
                             throw new Exception("BaseSpeedOverride must be a float value! ");
                         }
-                        Main.customSpeedModel.RegisterPartyBaseSpeed(dat.PartyTemplate.StringId, baseSpeedOverride);
+                        Main.PartySpeedContext.RegisterPartyBaseSpeed(dat.PartyTemplate.StringId, baseSpeedOverride);
                     }
                     else
                     {
-                        Main.customSpeedModel.RegisterPartyBaseSpeed(dat.PartyTemplate.StringId, float.MinValue);
+                        Main.PartySpeedContext.RegisterPartyBaseSpeed(dat.PartyTemplate.StringId, float.MinValue);
                     }
 
                     //minimum devestation override
@@ -337,7 +370,7 @@ namespace CustomSpawns.Data
                         {
                             throw new Exception("MinimumFinalSpeed must be a float value! ");
                         }
-                        Main.customSpeedModel.RegisterPartyMinimumSpeed(dat.PartyTemplate.StringId, minSpeed);
+                        Main.PartySpeedContext.RegisterPartyMinimumSpeed(dat.PartyTemplate.StringId, minSpeed);
                     }
 
                     float maxSpeed = float.MinValue;
@@ -347,7 +380,7 @@ namespace CustomSpawns.Data
                         {
                             throw new Exception("MaximumFinalSpeed must be a float value! ");
                         }
-                        Main.customSpeedModel.RegisterPartyMaximumSpeed(dat.PartyTemplate.StringId, maxSpeed);
+                        Main.PartySpeedContext.RegisterPartyMaximumSpeed(dat.PartyTemplate.StringId, maxSpeed);
                     }
 
                     //Spawn along with
@@ -365,12 +398,12 @@ namespace CustomSpawns.Data
                             PartyTemplateObject pt = (PartyTemplateObject)MBObjectManager.Instance.ReadObjectReferenceFromXml(s1, typeof(PartyTemplateObject), node);
                             dat.SpawnAlongWith.Add(new AccompanyingParty(pt, NameSignifierData.Instance.GetPartyNameFromID(pt.StringId),
                                 NameSignifierData.Instance.GetPartyFollowBehaviourFlagFromID(pt.StringId)));
-                            Main.customSpeedModel.RegisterPartyExtraSpeed(pt.StringId, NameSignifierData.Instance.GetSpeedModifierFromID(pt.StringId));
-                            Main.customSpeedModel.RegisterPartyBaseSpeed(pt.StringId, NameSignifierData.Instance.GetBaseSpeedModifierOverrideFromID(pt.StringId));
+                            Main.PartySpeedContext.RegisterPartyExtraBonusSpeed(pt.StringId, NameSignifierData.Instance.GetSpeedModifierFromID(pt.StringId));
+                            Main.PartySpeedContext.RegisterPartyBaseSpeed(pt.StringId, NameSignifierData.Instance.GetBaseSpeedModifierOverrideFromID(pt.StringId));
                             if (minSpeed != float.MinValue)
-                                Main.customSpeedModel.RegisterPartyMinimumSpeed(pt.StringId, minSpeed);
+                                Main.PartySpeedContext.RegisterPartyMinimumSpeed(pt.StringId, minSpeed);
                             if (maxSpeed != float.MinValue)
-                                Main.customSpeedModel.RegisterPartyMaximumSpeed(pt.StringId, maxSpeed);
+                                Main.PartySpeedContext.RegisterPartyMaximumSpeed(pt.StringId, maxSpeed);
                         }
                         k++;
                     }

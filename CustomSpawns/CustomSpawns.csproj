@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
@@ -290,7 +290,6 @@
     <Compile Include="CampaignData\Config\ICampaignDataConfig.cs" />
     <Compile Include="CampaignData\Implementations\CampaignTest.cs" />
     <Compile Include="CampaignData\Config\CampaignTestConfig.cs" />
-    <Compile Include="CustomSpawnsCustomSpeedModel.cs" />
     <Compile Include="Config\Config.cs" />
     <Compile Include="Config\ConfigLoader.cs" />
     <Compile Include="CampaignData\Implementations\DailyLogger.cs" />
@@ -319,8 +318,10 @@
     <Compile Include="HarmonyPatches\Gameplay\PartySpottingRangePatch.cs" />
     <Compile Include="HarmonyPatches\GetUnitValueForFactionPatch.cs" />
     <Compile Include="HarmonyPatches\MapScreenPatch.cs" />
+    <Compile Include="HarmonyPatches\RemovePartyTrackersFromNonBanditPartiesPatch.cs" />
     <Compile Include="HarmonyPatches\SurgeryAppliedBugPatch.cs" />
     <Compile Include="HarmonyPatches\GetNavigationMeshCenterPositionCrashOnInvalidFaceFix.cs" />
+    <Compile Include="HarmonyPatches\PartySpeedModelPatch.cs" />
     <Compile Include="Main.cs" />
     <Compile Include="MCMv3\CsSettings.cs" />
     <Compile Include="ModIntegration\SubMod.cs" />
@@ -329,6 +330,7 @@
     <Compile Include="PrisonerRecruitment\PrisonerRecruitmentConfig.cs" />
     <Compile Include="PrisonerRecruitment\PrisonerRecruitmentConfigLoader.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="PartySpeed\PartySpeedContext.cs" />
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>

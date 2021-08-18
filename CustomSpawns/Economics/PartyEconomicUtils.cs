@@ -19,7 +19,7 @@ namespace CustomSpawns.Economics
                 mobileParty.PartyTradeGold = (int)((double)mobileParty.PartyTradeGold * 0.95 + (double)(50f * (float)mobileParty.Party.MemberRoster.TotalManCount * 0.05f));
                 if (mobileParty.Food < 0 || (MBRandom.RandomFloat < 0.1f && mobileParty.MapEvent != null))
                 {
-                    foreach (ItemObject itemObject in ItemObject.All)
+                    foreach (ItemObject itemObject in Items.All)
                     {
                         if (itemObject.IsFood)
                         {

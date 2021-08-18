@@ -1,19 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 //using CustomSpawns.MCMv3;
-using TaleWorlds.CampaignSystem.Actions;
-using TaleWorlds.CampaignSystem.Barterables;
-using TaleWorlds.CampaignSystem.CharacterDevelopment.Managers;
 using TaleWorlds.Core;
-using TaleWorlds.Library;
 using TaleWorlds.Localization;
 using TaleWorlds.CampaignSystem;
-using TaleWorlds.CampaignSystem.SandBox.CampaignBehaviors;
 using Helpers;
-using TaleWorlds.ObjectSystem;
 
 namespace CustomSpawns.Spawn
 {
@@ -65,15 +57,13 @@ namespace CustomSpawns.Spawn
         private static MobileParty CreatePartyInstance(Settlement spawnedSettlement, Clan clan, PartyTemplateObject templateObject,
             Track.PartyTypeEnum partyType, TextObject partyName = null)
         {
-
-            if (clan.IsBanditFaction) 
+            if (clan.IsBanditFaction)
             {
-                return BanditPartyComponent.CreateBanditParty(templateObject.StringId + "_" + 1, clan, spawnedSettlement.Hideout, false);
+                return BanditPartyComponent.CreateBanditParty(templateObject.StringId + "_" + 1, clan,
+                    spawnedSettlement.Hideout, false);
             }
-            else
-            {
-                return MBObjectManager.Instance.CreateObject<MobileParty>(templateObject.StringId + "_" + 1);
-            }
+            
+            return MobileParty.CreateParty(templateObject.StringId + "_" + 1);
         }
 
         private static void InitParty(MobileParty party, TextObject name, Clan faction, Settlement homeSettlement)
@@ -98,7 +88,7 @@ namespace CustomSpawns.Spawn
             party.ActualClan = faction;
             party.HomeSettlement = homeSettlement;
             TaleWorldsCode.BanditsCampaignBehaviour.CreatePartyTrade(party);
-            foreach (ItemObject itemObject in ItemObject.All)
+            foreach (ItemObject itemObject in Items.All)
             {
                 if (itemObject.IsFood)
                 {

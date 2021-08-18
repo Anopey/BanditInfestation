@@ -1,18 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System;
+using CustomSpawns.Data;
 using TaleWorlds.Core;
-using TaleWorlds.Localization;
 using TaleWorlds.MountAndBlade;
 using TaleWorlds.CampaignSystem;
 using TaleWorlds.Library;
-using System.Windows.Forms;
+using CustomSpawns.PartySpeed;
 using CustomSpawns.RewardSystem;
 //using CustomSpawns.MCMv3;
-using StoryMode;
-using SandBox;
 using CustomSpawns.UtilityBehaviours;
 using HarmonyLib;
 
@@ -22,7 +16,7 @@ namespace CustomSpawns
     {
         public static readonly string version = "v1.4.8";
         public static readonly bool isAPIMode = false;
-        public static CustomSpawnsCustomSpeedModel customSpeedModel;
+        public static PartySpeedContext PartySpeedContext;
 
         private static bool removalMode = false;
 
@@ -30,17 +24,6 @@ namespace CustomSpawns
 
         protected override void OnSubModuleLoad()
         {
-            try
-            {
-                Harmony harmony = new Harmony("com.Questry.CustomSpawns");
-                harmony.PatchAll();
-            }
-            catch (Exception e)
-            {
-                ErrorHandler.HandleException(e, "HARMONY PATCHES");
-            }
-
-
             ModIntegration.SubModManager.LoadAllValidDependentMods();
             if (ConfigLoader.Instance.Config.IsRemovalMode)
             {
@@ -48,7 +31,7 @@ namespace CustomSpawns
                 return;
             }
             removalMode = false;
-            customSpeedModel = new CustomSpawnsCustomSpeedModel();
+            PartySpeedContext = new PartySpeedContext();
         }
 
         public override void OnCampaignStart(Game game, object starterObject)
@@ -58,11 +41,11 @@ namespace CustomSpawns
                 return;
             try
             {
-                InitializeGame(game, (IGameStarter)starterObject);
+                AddBehaviours(starterObject as CampaignGameStarter);
             }
             catch (Exception e)
             {
-                ErrorHandler.HandleException(e);
+                ErrorHandler.HandleException(e, "Error while adding campaign behaviours");
             }
         }
 
@@ -72,7 +55,7 @@ namespace CustomSpawns
             //if it is new campaign then the player has to go through the menus etc.
             if (!(game.GameType is Campaign) || ((Campaign)game.GameType).CampaignGameLoadingType == Campaign.GameLoadingType.NewCampaign) 
                 return;
-            InitializeGame(game, gameStarterObject);
+            AddBehaviours(gameStarterObject as CampaignGameStarter);
         }
 
         protected override void OnBeforeInitialModuleScreenSetAsRoot() //assure player :) also myself lol
@@ -87,22 +70,6 @@ namespace CustomSpawns
         }
 
         #endregion
-
-        private void InitializeGame(Game game, IGameStarter gameStarterObject)
-        {
-            try
-            {
-                ClearLastInstances();
-                AddBehaviours(gameStarterObject as CampaignGameStarter);
-                //do overrides
-                if (ConfigLoader.Instance.Config.ModifyPartySpeeds && !removalMode)
-                    gameStarterObject.AddModel(customSpeedModel);
-            }
-            catch (Exception e)
-            {
-                ErrorHandler.HandleException(e);
-            }
-        }
 
         private void ClearLastInstances()
         {
@@ -119,7 +86,7 @@ namespace CustomSpawns
                 OnSaveStartRunBehaviour.InitializeSave(starter);
                 OnSaveStartRunBehaviour.Singleton.RegisterFunctionToRunOnSaveStart(OnSaveStart);
 
-                starter.AddBehavior(new Spawn.SpawnBehaviour(Data.SpawnDataManager.Instance));
+                starter.AddBehavior(new Spawn.SpawnBehaviour());
                 starter.AddBehavior(new AI.HourlyPatrolAroundSpawnBehaviour());
                 starter.AddBehavior(new AI.AttackClosestIfIdleForADayBehaviour());
                 starter.AddBehavior(new AI.PatrolAroundClosestLestInterruptedAndSwitchBehaviour());
@@ -150,7 +117,7 @@ namespace CustomSpawns
             //restore lost AI behaviours!
             try
             {
-                var partyIDToData = Data.SpawnDataManager.Instance.PartyIDToData;
+                var partyIDToData = SpawnDataManager.Instance.PartyIDToData;
                 foreach (MobileParty mb in MobileParty.All)
                 {
                     string id = CampaignUtils.IsolateMobilePartyStringID(mb);
@@ -164,6 +131,31 @@ namespace CustomSpawns
             }catch(Exception e)
             {
                 ErrorHandler.HandleException(e, " reconstruction of save custom spawns mobile party data");
+            }
+        }
+
+        public override void OnGameInitializationFinished(Game game) {
+            base.OnGameInitializationFinished(game);
+            try
+            {
+                Harmony harmony = new Harmony("com.Questry.CustomSpawns");
+                harmony.PatchAll();
+            }
+            catch (Exception e)
+            {
+                ErrorHandler.HandleException(e, "HARMONY PATCHES");
+            }
+            
+            try
+            {
+                // Spawn Data Init (Read from XML)
+                ClearLastInstances();
+                SpawnDataManager.Init();
+            }
+            catch (Exception e)
+            {
+                ErrorHandler.HandleException(e, "Could not create an instance of SpawnDataManager. Might have encountered an " +
+                                                "issue while parsing the XML file or invalid parameters/values have been found");
             }
         }
 

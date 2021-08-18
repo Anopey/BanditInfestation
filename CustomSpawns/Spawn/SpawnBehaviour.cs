@@ -1,15 +1,8 @@
 ﻿using CustomSpawns.Data;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 //using CustomSpawns.MCMv3;
 using TaleWorlds.CampaignSystem;
-using TaleWorlds.CampaignSystem.SandBox.CampaignBehaviors;
-using TaleWorlds.Engine;
 using TaleWorlds.Localization;
-using TaleWorlds.MountAndBlade;
 using CustomSpawns.CampaignData;
 
 namespace CustomSpawns.Spawn
@@ -19,18 +12,14 @@ namespace CustomSpawns.Spawn
 
         #region Data Management
 
-        Data.SpawnDataManager dataManager;
-
         private int lastRedundantDataUpdate = 0;
 
         private bool dataGottenAtStart = false;
 
-        public SpawnBehaviour(Data.SpawnDataManager data_manager)
+        public SpawnBehaviour()
         {
             DynamicSpawnData.FlushSpawnData();
             lastRedundantDataUpdate = 0;
-            dataManager = data_manager;
-            Data.DataUtils.EnsureWarnIDQUalities(dataManager.Data);
             dataGottenAtStart = false;
         }
 
@@ -40,7 +29,7 @@ namespace CustomSpawns.Spawn
             {
                 if (mb == null)
                     return;
-                foreach (var dat in dataManager.Data)
+                foreach (var dat in SpawnDataManager.Instance.Data)
                 {
                     if (CampaignUtils.IsolateMobilePartyStringID(mb) == dat.PartyTemplate.StringId) //TODO could deal with sub parties in the future as well!
                     {
@@ -157,7 +146,7 @@ namespace CustomSpawns.Spawn
         {
             try
             {
-                var list = dataManager.Data;
+                var list = SpawnDataManager.Instance.Data;
                 Random rand = new Random();
                 var isSpawnSoundPlaying = false;
                 foreach (Data.SpawnData data in list)

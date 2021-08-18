@@ -70,7 +70,7 @@ namespace CustomSpawns.RewardSystem
                             case RewardType.Item:
                                 if (reward.ItemId != null)
                                 {
-                                    var itemToAdd = ItemObject.All.FirstOrDefault(obj => obj.StringId == reward.ItemId);
+                                    var itemToAdd = Items.All.FirstOrDefault(obj => obj.StringId == reward.ItemId);
                                     if (reward.Chance != null)
                                     {
                                         if (IsItemGiven(Convert.ToDecimal(reward.Chance)))
